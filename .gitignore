@@ -1,3 +1,11 @@
+# Ignorar a pasta
 venv/
 __pycache__/
+.idea/
+# dist/
+# build/
 .vscode/
+
+# Ignorar o arquivo
+.env
+*.sqlite3
