@@ -6,8 +6,8 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 
-from .models import Products, Category
-from .serializers import ProductsSerializer, ProductsDetailSerializer, CategorySerializer
+from .models import Products, Category, Images
+from .serializers import ProductsSerializer, ProductsDetailSerializer, CategorySerializer, ImagesDetailSerializer, ImagesSimpleSerializer, ResultadosSerializer
 
 import json
 import requests 
@@ -25,6 +25,7 @@ def get_natura_api(id):
 
         if response.status_code == 200:
             data = json.loads(response.content)
+            print(data)
             if data['variations'] is not None:
                 res = {
                     "product_id":int(data['id']),
@@ -49,16 +50,10 @@ def get_natura_api(id):
 
 def verify_category(category):
     try:
-        cat = Category.objects.get_or_create(category_name=category)
+        cat, _created = Category.objects.get_or_create(category_name=category)
         return cat.pk
     except:
-        try:
-            serializer = CategorySerializer(data={'category_name':category})
-            if serializer.is_valid():
-                instance = serializer.save()
-                return instance.pk
-        except:
-            return status.HTTP_404_NOT_FOUND
+        return status.HTTP_404_NOT_FOUND
         
 
 @api_view(['GET'])
@@ -81,12 +76,14 @@ def get_by_id(request, id):
 
     if request.method == 'GET':
         try:
-            product = Products.objects.get(pk=id)
+            products = Products.objects.get(pk=id)
         
         except:
             return Response(status=status.HTTP_400_BAD_REQUEST)
         
-        serializer = ProductsSerializer(product)
+        images = Images.objects.filter(image_product=id)
+
+        serializer = ResultadosSerializer({'produto': products, 'imagens': images})
 
         return Response(serializer.data)
 
@@ -96,10 +93,18 @@ def get_by_name(request, name):
     if request.method == 'GET':
         try:
             query = Q(product_name__icontains=name) | Q(product_name__startswith=name) | Q(product_name__endswith=name)
-            resultados = ProductsSerializer.objects.filter(query)
-            return resultados
+            results = Products.objects.filter(query)
+
+            query = Q()
+            for result in results:
+                query |= Q(image_product=result.pk) | Q(image_primary=True)
+
+            response = Images.objects.filter(query)
+            serializer = ImagesDetailSerializer(response, many=True)
+            return Response(serializer.data)
         
-        except:
+        except Exception as e:
+            print(e)
             return Response(status=status.HTTP_404_NOT_FOUND)
 
 @api_view(['GET', 'POST', 'PUT',  'DELETE'])
@@ -153,8 +158,6 @@ def product_manager(request):
     if request.method == 'POST':
 
         new_product = request.data
-
-        print(new_product)
         
         serializer = ProductsSerializer(data=new_product)
 

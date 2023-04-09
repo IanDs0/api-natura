@@ -8,6 +8,15 @@ class Category(models.Model):
 
     def __str__(self) -> str:
         return f'Category: {self.category_name}'
+    
+class Images(models.Model):
+    image_url = models.TextField(default='')
+    image_product = models.ForeignKey('Products', on_delete=models.CASCADE, related_name='images')
+    image_primary = models.BooleanField(default=False)
+
+    def __str__(self) -> str:
+        return f'Image: {self.image_url} \
+            Product: {self.image_product}'
 
 class Products(models.Model):
 
