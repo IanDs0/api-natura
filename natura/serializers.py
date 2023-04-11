@@ -17,7 +17,13 @@ class ProductsDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Products
         fields = '__all__' #para todos
+        # exclude = ('pk',)
         depth = 1
+
+class ImagesSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Images
+        fields = '__all__' #para todos
 
 class ImagesDetailSerializer(serializers.ModelSerializer):
     class Meta:
@@ -35,6 +41,10 @@ class CategorySerializer(serializers.ModelSerializer):
         model = Category
         fields = '__all__' #para todos
 
-class ResultadosSerializer(serializers.Serializer):
+class ResultadosDetailSerializer(serializers.Serializer):
     produto = ProductsDetailSerializer()
+    imagens = ImagesSimpleSerializer(many=True)
+
+class ResultadosSerializer(serializers.Serializer):
+    produto = ProductsSerializer()
     imagens = ImagesSimpleSerializer(many=True)

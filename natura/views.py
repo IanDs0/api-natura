@@ -7,7 +7,7 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from .models import Products, Category, Images
-from .serializers import ProductsSerializer, ProductsDetailSerializer, CategorySerializer, ImagesDetailSerializer, ImagesSimpleSerializer, ResultadosSerializer
+from .serializers import ProductsSerializer, ProductsDetailSerializer, CategorySerializer, ImagesDetailSerializer, ImagesSimpleSerializer, ImagesSerializer, ResultadosSerializer
 
 import json
 import requests 
@@ -25,7 +25,6 @@ def get_natura_api(id):
 
         if response.status_code == 200:
             data = json.loads(response.content)
-            print(data)
             if data['variations'] is not None:
                 res = {
                     "product_id":int(data['id']),
@@ -41,7 +40,21 @@ def get_natura_api(id):
                     "product_price":float(data['variations'][0]['product_availabilities'][0]['price']),
                     "product_salesPrice":float(data['variations'][0]['product_availabilities'][0]['salesPrice']),
                 }
-                return res
+
+                imgs = []  
+                primary = True
+                for image in data['variations'][0]['images']:
+                    if image['description'] == 'zoomImageUrl' or image['description'] == 'mainImageUrl':
+                        img = {
+                            "image_url": "http:"+str(image['zoom']),
+                            "image_product": id,
+                            "image_primary": primary
+                        }
+                        print("OK")
+                        primary = False
+                        imgs.append(img)
+
+                return res, imgs
 
     except:
         return status.HTTP_404_NOT_FOUND
@@ -72,22 +85,6 @@ def get_products(request):
     return Response(json.dumps(products), status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['GET'])
-def get_by_id(request, id):
-
-    if request.method == 'GET':
-        try:
-            products = Products.objects.get(pk=id)
-        
-        except:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
-        
-        images = Images.objects.filter(image_product=id)
-
-        serializer = ResultadosSerializer({'produto': products, 'imagens': images})
-
-        return Response(serializer.data)
-
-@api_view(['GET'])
 def get_by_name(request, name):
 
     if request.method == 'GET':
@@ -111,7 +108,6 @@ def get_by_name(request, name):
 def product_manager(request):
 
 # ACESSOS
-
     if request.method == 'GET':
 
         try:
@@ -122,7 +118,7 @@ def product_manager(request):
                 try:
                     product = Products.objects.get(pk=product_id)   # Get the object in database
                 except:
-                    response = get_natura_api(product_id)
+                    response, images = get_natura_api(product_id)
 
                     if response != status.HTTP_404_NOT_FOUND:
 
@@ -138,11 +134,22 @@ def product_manager(request):
                                 print(serializer.errors)
                             if serializer.is_valid():
                                 serializer.save()
-                                return Response(serializer.data, status=status.HTTP_201_CREATED)
+                                
+                                serializer = ImagesSerializer(data=images, many=True)
+
+                                if not serializer.is_valid():
+                                    print(serializer.errors)
+                                if serializer.is_valid():
+                                    serializer.save()
+
+                                    return Response({'produto': response, 'imagens': images}, status=status.HTTP_201_CREATED)
 
                     return Response(status=status.HTTP_404_NOT_FOUND)
 
-                serializer = ProductsSerializer(product)           # Serialize the object data into json
+                images = Images.objects.filter(image_product=product_id)
+
+                serializer = ResultadosSerializer({'produto': product, 'imagens': images})
+
                 return Response(serializer.data)            # Return the serialized data
 
             else:
@@ -151,10 +158,7 @@ def product_manager(request):
         except:
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
-    
-
 # CRIANDO DADOS
-
     if request.method == 'POST':
 
         new_product = request.data
@@ -166,26 +170,8 @@ def product_manager(request):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
     
         return Response(status=status.HTTP_400_BAD_REQUEST)
-# {
-#     'product_id': 4, 
-#     'product_name': 'Ian Lucas Lopes Honorio', 
-#     'product_category': 2, 
-#     'product_usage': 'wesdrftgh', 
-#     'product_description': 'sfdtgyhu', 
-#     'product_longDescription': 'sdgyhukjgfdsafdghjlkhgfd', 
-#     'product_activeIngredient': '23232', 
-#     'product_line': 'Casa', 
-#     'product_url_line': '/casa', 
-#     'product_quantity': 33, 
-#     'product_price': 2, 
-#     'product_salesPrice': 3, 
-#     'product_unitPrice': 3
-# }
-
-
 
 # EDITAR DADOS (PUT)
-
     if request.method == 'PUT':
 
         product_id = request.data['product_id']
@@ -203,11 +189,7 @@ def product_manager(request):
         
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
-
-
-
 # DELETAR DADOS (DELETE)
-
     if request.method == 'DELETE':
 
         try:
