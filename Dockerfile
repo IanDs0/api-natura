@@ -12,4 +12,5 @@ COPY . .
 
 RUN python3 manage.py makemigrations
 
+# porta 80 não é a porta padrão do django
 EXPOSE 80
