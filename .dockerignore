@@ -1,0 +1,10 @@
+*.md
+*.sql.gz
+*.sqlite3
+.idea
+.gitignore
+.vscode
+__pycache__
+dist
+Dockerfile
+# env
