@@ -12,4 +12,8 @@ COPY . .
 
 RUN python3 manage.py makemigrations
 
-EXPOSE 8000
+RUN python3 manage.py migrate
+
+EXPOSE 300
+
+CMD ["python3", "manage.py", "runserver", "0.0.0.0:300"]
