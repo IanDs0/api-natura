@@ -12,7 +12,7 @@ COPY . .
 
 RUN python3 manage.py makemigrations
 
-RUN python3 manage.py migrate
+# RUN python3 manage.py migrate
 
 # porta 80 não é a porta padrão do django
 EXPOSE 80
