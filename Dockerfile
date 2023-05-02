@@ -12,4 +12,4 @@ COPY . .
 
 RUN python3 manage.py makemigrations
 
-EXPOSE 8000
+EXPOSE 80
