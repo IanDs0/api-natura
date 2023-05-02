@@ -30,7 +30,7 @@ def get_natura_api(id):
                     "product_id":int(data['id']),
                     "product_name":data['friendlyName'],
                     "product_category":data['name'],
-                    "product_usage":data['usage'],
+                    "product_usage":"" if data['usage'] is None else data['usage'],
                     "product_description":data['description'],
                     "product_longDescription":data['longDescription'],
                     "product_activeIngredient":data['activeIngredient'],
