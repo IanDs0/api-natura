@@ -12,4 +12,6 @@ COPY . .
 
 RUN python3 manage.py makemigrations
 
+RUN python3 manage.py migrate
+
 EXPOSE 8000
